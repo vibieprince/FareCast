@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timedelta
 import os
 import pickle
-import numpy as np
 
 app = FastAPI()
 
@@ -19,7 +18,7 @@ models = {}
 for v in ['bike', 'auto', 'car']:
     models[f'clf_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'clf_{v}.pkl'), 'rb'))
     models[f'reg_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'reg_{v}.pkl'), 'rb'))
-    models[f'wait_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'wait_{v}.pkl'), 'rb'))  # ✅ NEW
+    models[f'wait_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'wait_{v}.pkl'), 'rb'))
 
 # Load mappings
 with open(os.path.join(BASE_DIR, 'traffic_map.json')) as f:
@@ -28,14 +27,27 @@ with open(os.path.join(BASE_DIR, 'traffic_map.json')) as f:
 with open(os.path.join(BASE_DIR, 'zone_map.json')) as f:
     zone_map = json.load(f)
 
+# 🔥 NEW
+with open(os.path.join(BASE_DIR, 'platform_map.json')) as f:
+    platform_map = json.load(f)
+
 # ==============================
-# FEATURE ORDER
+# FEATURE ORDER (UPDATED)
 # ==============================
 FEATURES = [
     'DecimalHour', 'Day', 'Weekend', 'Rushhour',
-    'DistanceKm', 'Traffic_Enc', 'SurgeValue',
+    'DistanceKm', 'Duration',
+    'Traffic_Enc', 'SurgeValue',
+
     'PickupTemperature', 'PickupHumidity',
-    'Pickup_Enc', 'Drop_Enc'
+    'PickupWindSpeed', 'PickupWeatherCode',
+
+    'DropTemperature', 'DropHumidity',
+    'DropWindSpeed', 'DropWeatherCode',
+
+    'Pickup_Enc', 'Drop_Enc',
+
+    'Platform_Enc'  # 🔥 NEW
 ]
 
 # ==============================
@@ -65,61 +77,63 @@ def build_features(req, decimal_hour):
         'Weekend': 1 if datetime.now().weekday() >= 5 else 0,
         'Rushhour': is_rush(decimal_hour),
         'DistanceKm': req.distance_km,
+        'Duration': req.distance_km * 3,  # simple proxy
         'Traffic_Enc': encode_safe(traffic_map, req.traffic),
         'SurgeValue': 1,
+
         'PickupTemperature': req.temperature,
         'PickupHumidity': req.humidity,
+        'PickupWindSpeed': 2,
+        'PickupWeatherCode': 0,
+
+        'DropTemperature': req.temperature,
+        'DropHumidity': req.humidity,
+        'DropWindSpeed': 2,
+        'DropWeatherCode': 0,
+
         'Pickup_Enc': encode_safe(zone_map, req.pickup_zone),
-        'Drop_Enc': encode_safe(zone_map, req.drop_zone)
+        'Drop_Enc': encode_safe(zone_map, req.drop_zone),
+
+        'Platform_Enc': 0  # placeholder (will override)
     }
 
 # ==============================
-# PLATFORM MODIFIERS
+# CORE PREDICTION (UPDATED)
 # ==============================
-PLATFORM_MULTIPLIERS = {
-    "Uber": 1.05,
-    "Ola": 1.00,
-    "Rapido": 0.95
-}
-
-WAIT_ADJUSTMENT = {
-    "Uber": +1,
-    "Ola": +2,
-    "Rapido": -1
-}
-
-# ==============================
-# CORE PREDICTION
-# ==============================
-def predict_all(features, distance, noise_factor=0.02):
-    df = pd.DataFrame([features])[FEATURES]
+def predict_all(features, distance):
     result = {}
 
     for v in ['bike', 'auto', 'car']:
 
-        is_available = models[f'clf_{v}'].predict(df)[0]
+        vehicle_result = {}
 
-        if is_available == 0:
-            result[v] = None
-            continue
+        for platform in ["UBER", "OLA", "RAPIDO"]:
 
-        # Base predictions
-        rate = models[f'reg_{v}'].predict(df)[0]
-        wait = models[f'wait_{v}'].predict(df)[0]
+            # Inject platform
+            features['Platform_Enc'] = platform_map.get(platform, 0)
 
-        # Add slight noise
-        rate = rate * (1 + np.random.uniform(-noise_factor, noise_factor))
-        wait = max(1, wait * (1 + np.random.uniform(-0.1, 0.1)))
+            df = pd.DataFrame([features])[FEATURES]
 
-        base_price = max(rate, 0) * distance
+            # Availability
+            is_available = models[f'clf_{v}'].predict(df)[0]
 
-        result[v] = {}
+            if is_available == 0:
+                vehicle_result[platform.capitalize()] = None
+                continue
 
-        for platform in ["Uber", "Ola", "Rapido"]:
-            result[v][platform] = {
-                "price": int(base_price * PLATFORM_MULTIPLIERS[platform]),
-                "wait": int(max(1, wait + WAIT_ADJUSTMENT[platform]))
+            # Predictions
+            rate = models[f'reg_{v}'].predict(df)[0]
+            wait = models[f'wait_{v}'].predict(df)[0]
+
+            base_price = max(rate, 0) * distance
+            wait = max(1, wait)
+
+            vehicle_result[platform.capitalize()] = {
+                "price": int(base_price),
+                "wait": int(wait)
             }
+
+        result[v] = vehicle_result
 
     return result
 
@@ -134,7 +148,7 @@ def farecast(req: RideRequest):
 
     # CURRENT
     current_features = build_features(req, decimal_hour)
-    current_data = predict_all(current_features, req.distance_km, noise_factor=0.01)
+    current_data = predict_all(current_features.copy(), req.distance_km)
 
     # FORECAST
     forecast = []
@@ -145,12 +159,12 @@ def farecast(req: RideRequest):
         future_time = (decimal_hour + i * 0.25) % 24
         f_features = build_features(req, future_time)
 
-        # Dynamic changes
+        # dynamic adjustments
         f_features['SurgeValue'] = 1 + (i * 0.03)
         if i > 4:
             f_features['Traffic_Enc'] = min(f_features['Traffic_Enc'] + 1, 3)
 
-        future_data = predict_all(f_features, req.distance_km, noise_factor=0.03)
+        future_data = predict_all(f_features.copy(), req.distance_km)
 
         entry = {
             "time": (now + timedelta(minutes=i*15)).strftime("%H:%M"),
@@ -159,12 +173,13 @@ def farecast(req: RideRequest):
             "car": future_data['car']
         }
 
-        # Find min price
+        # min price
         valid_prices = []
         for v in ['bike', 'auto', 'car']:
             if entry[v]:
                 for p in entry[v].values():
-                    valid_prices.append(p['price'])
+                    if p:
+                        valid_prices.append(p['price'])
 
         if valid_prices:
             min_val = min(valid_prices)
@@ -179,7 +194,8 @@ def farecast(req: RideRequest):
     for v in ['bike', 'auto', 'car']:
         if current_data[v]:
             for p in current_data[v].values():
-                valid_current.append(p['price'])
+                if p:
+                    valid_current.append(p['price'])
 
     current_min = min(valid_current) if valid_current else 0
     savings = max(0, current_min - min_price)
