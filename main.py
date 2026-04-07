@@ -1,57 +1,48 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 import json
-from datetime import datetime, timedelta
 import os
 import pickle
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
 # ==============================
-# LOAD MODELS
+# 1. LOAD MODELS & MAPPINGS
 # ==============================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Load 9 models: (Classification, Fare Regressor, Wait Regressor) x 3 Vehicles
 models = {}
-
 for v in ['bike', 'auto', 'car']:
-    models[f'clf_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'clf_{v}.pkl'), 'rb'))
-    models[f'reg_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'reg_{v}.pkl'), 'rb'))
-    models[f'wait_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'wait_{v}.pkl'), 'rb'))
+    try:
+        models[f'clf_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'clf_{v}.pkl'), 'rb'))
+        models[f'reg_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'reg_{v}.pkl'), 'rb'))
+        models[f'wait_{v}'] = pickle.load(open(os.path.join(BASE_DIR, f'wait_reg_{v}.pkl'), 'rb'))
+    except FileNotFoundError as e:
+        print(f"Warning: Model file not found - {e}")
 
-# Load mappings
-with open(os.path.join(BASE_DIR, 'traffic_map.json')) as f:
-    traffic_map = json.load(f)
+# Load all categorical mappings
+def load_json(filename):
+    with open(os.path.join(BASE_DIR, filename)) as f:
+        return json.load(f)
 
-with open(os.path.join(BASE_DIR, 'zone_map.json')) as f:
-    zone_map = json.load(f)
+traffic_map = load_json('traffic_map.json')
+zone_map = load_json('zone_map.json')
+platform_map = load_json('platform_map.json')
 
-# 🔥 NEW
-with open(os.path.join(BASE_DIR, 'platform_map.json')) as f:
-    platform_map = json.load(f)
-
-# ==============================
-# FEATURE ORDER (UPDATED)
-# ==============================
+# EXACT order used during training (CRITICAL for model.predict)
 FEATURES = [
-    'DecimalHour', 'Day', 'Weekend', 'Rushhour',
-    'DistanceKm', 'Duration',
-    'Traffic_Enc', 'SurgeValue',
-
-    'PickupTemperature', 'PickupHumidity',
-    'PickupWindSpeed', 'PickupWeatherCode',
-
-    'DropTemperature', 'DropHumidity',
-    'DropWindSpeed', 'DropWeatherCode',
-
-    'Pickup_Enc', 'Drop_Enc',
-
-    'Platform_Enc'  # 🔥 NEW
+    'Platform_Enc', 'Hour', 'Minute', 'DecimalHour', 'Day', 'Weekend', 'Rushhour', 
+    'DistanceKm', 'Duration', 'TrafficLevel_Enc', 'SurgeValue', 
+    'PickupTemperature', 'PickupWindSpeed', 'PickupWeatherCode', 'PickupHumidity',
+    'DropTemperature', 'DropWindSpeed', 'DropWeatherCode', 'DropHumidity',
+    'PickupZone_Enc', 'DropZone_Enc'
 ]
 
 # ==============================
-# REQUEST MODEL
+# 2. DATA MODELS
 # ==============================
 class RideRequest(BaseModel):
     distance_km: float
@@ -60,159 +51,147 @@ class RideRequest(BaseModel):
     drop_zone: str
     temperature: float
     humidity: float
+    wind_speed: float = 2.0  # Default if not provided
+    weather_code: int = 0    # Default if not provided
+    # Optional overrides for simulation
+    decimal_hour: float = None 
+    day: int = None
 
 # ==============================
-# HELPERS
+# 3. LOGIC HELPERS
 # ==============================
-def encode_safe(mapping, value):
-    return mapping.get(value.upper(), 0)
+def get_rush_status(decimal_hour):
+    # Standard Indian Metro Rush Hours
+    return 1 if (8.0 <= decimal_hour <= 10.5 or 17.5 <= decimal_hour <= 20.5) else 0
 
-def is_rush(hour):
-    return 1 if (7.5 <= hour <= 9.5 or 17 <= hour <= 20) else 0
-
-def build_features(req, decimal_hour):
-    return {
-        'DecimalHour': decimal_hour,
-        'Day': datetime.now().weekday(),
-        'Weekend': 1 if datetime.now().weekday() >= 5 else 0,
-        'Rushhour': is_rush(decimal_hour),
+def build_feature_vector(req, platform_code, current_hour):
+    """Creates an ordered feature vector matching the model's training data."""
+    h = int(current_hour)
+    m = int((current_hour % 1) * 60)
+    d = req.day if req.day is not None else datetime.now().weekday()
+    
+    data = {
+        'Platform_Enc': platform_code,
+        'Hour': h,
+        'Minute': m,
+        'DecimalHour': current_hour,
+        'Day': d,
+        'Weekend': 1 if d >= 5 else 0,
+        'Rushhour': get_rush_status(current_hour),
         'DistanceKm': req.distance_km,
-        'Duration': req.distance_km * 3,  # simple proxy
-        'Traffic_Enc': encode_safe(traffic_map, req.traffic),
-        'SurgeValue': 1,
-
+        'Duration': req.distance_km * 2.5, # Base heuristic for duration
+        'TrafficLevel_Enc': traffic_map.get(req.traffic.upper(), 3),
+        'SurgeValue': 0,
         'PickupTemperature': req.temperature,
+        'PickupWindSpeed': req.wind_speed,
+        'PickupWeatherCode': req.weather_code,
         'PickupHumidity': req.humidity,
-        'PickupWindSpeed': 2,
-        'PickupWeatherCode': 0,
-
         'DropTemperature': req.temperature,
+        'DropWindSpeed': req.wind_speed,
+        'DropWeatherCode': req.weather_code,
         'DropHumidity': req.humidity,
-        'DropWindSpeed': 2,
-        'DropWeatherCode': 0,
-
-        'Pickup_Enc': encode_safe(zone_map, req.pickup_zone),
-        'Drop_Enc': encode_safe(zone_map, req.drop_zone),
-
-        'Platform_Enc': 0  # placeholder (will override)
+        'PickupZone_Enc': zone_map.get(req.pickup_zone.upper(), 8),
+        'DropZone_Enc': zone_map.get(req.drop_zone.upper(), 8)
     }
+    # Return as DataFrame to keep feature names and order intact
+    return pd.DataFrame([data])[FEATURES]
 
-# ==============================
-# CORE PREDICTION (UPDATED)
-# ==============================
-def predict_all(features, distance):
-    result = {}
-
+def predict_platforms(req, hour_val):
+    """Predicts prices and waits for all platforms for a given time."""
+    results = {"bike": {}, "auto": {}, "car": {}}
+    
     for v in ['bike', 'auto', 'car']:
-
-        vehicle_result = {}
-
-        for platform in ["UBER", "OLA", "RAPIDO"]:
-
-            # Inject platform
-            features['Platform_Enc'] = platform_map.get(platform, 0)
-
-            df = pd.DataFrame([features])[FEATURES]
-
-            # Availability
-            is_available = models[f'clf_{v}'].predict(df)[0]
-
-            if is_available == 0:
-                vehicle_result[platform.capitalize()] = None
+        for platform_name, p_code in platform_map.items():
+            features_df = build_feature_vector(req, p_code, hour_val)
+            
+            # 1. Check Availability
+            if models[f'clf_{v}'].predict(features_df)[0] == 0:
+                results[v][platform_name.capitalize()] = None
                 continue
-
-            # Predictions
-            rate = models[f'reg_{v}'].predict(df)[0]
-            wait = models[f'wait_{v}'].predict(df)[0]
-
-            base_price = max(rate, 0) * distance
-            wait = max(1, wait)
-
-            vehicle_result[platform.capitalize()] = {
-                "price": int(base_price),
-                "wait": int(wait)
+            
+            # 2. Predict Fare & Wait
+            rate_km = models[f'reg_{v}'].predict(features_df)[0]
+            wait_time = models[f'wait_{v}'].predict(features_df)[0]
+            
+            results[v][platform_name.capitalize()] = {
+                "price": int(max(rate_km, 0) * req.distance_km),
+                "wait": int(max(wait_time, 1))
             }
-
-        result[v] = vehicle_result
-
-    return result
+    return results
 
 # ==============================
-# API ENDPOINT
+# 4. API ENDPOINTS
 # ==============================
 @app.post("/farecast")
-def farecast(req: RideRequest):
+async def farecast_endpoint(req: RideRequest):
+    # Use provided time or current server time
+    if req.decimal_hour is not None:
+        start_hour = req.decimal_hour
+    else:
+        now = datetime.now()
+        start_hour = now.hour + (now.minute / 60)
 
-    now = datetime.now()
-    decimal_hour = now.hour + now.minute / 60
+    # A. CURRENT ESTIMATES
+    current_data = predict_platforms(req, start_hour)
 
-    # CURRENT
-    current_features = build_features(req, decimal_hour)
-    current_data = predict_all(current_features.copy(), req.distance_km)
-
-    # FORECAST
-    forecast = []
-    min_price = float('inf')
-    best_time = ""
+    # B. 2-HOUR FORECAST (9 steps of 15 mins)
+    forecast_list = []
+    all_prices = []
 
     for i in range(9):
-        future_time = (decimal_hour + i * 0.25) % 24
-        f_features = build_features(req, future_time)
+        f_hour = (start_hour + (i * 0.25)) % 24
+        f_data = predict_platforms(req, f_hour)
+        
+        # Formatting timestamp for UI
+        display_time = (datetime.combine(datetime.today(), datetime.min.time()) + 
+                        timedelta(hours=f_hour)).strftime("%H:%M")
+        
+        forecast_list.append({
+            "time": display_time,
+            "bike": f_data['bike'],
+            "auto": f_data['auto'],
+            "car": f_data['car']
+        })
 
-        # dynamic adjustments
-        f_features['SurgeValue'] = 1 + (i * 0.03)
-        if i > 4:
-            f_features['Traffic_Enc'] = min(f_features['Traffic_Enc'] + 1, 3)
+        # Track valid prices for "Best Time" logic
+        for v in f_data.values():
+            for p in v.values():
+                if p: all_prices.append(p['price'])
 
-        future_data = predict_all(f_features.copy(), req.distance_km)
+    # C. INSIGHTS GENERATION
+    # Compare current cheapest vs global forecast cheapest
+    current_cheapest = 0
+    valid_current = [p['price'] for v in current_data.values() for p in v.values() if p]
+    if valid_current:
+        current_cheapest = min(valid_current)
+    
+    global_cheapest = min(all_prices) if all_prices else current_cheapest
+    savings = max(0, current_cheapest - global_cheapest)
+    
+    # Logic for best time
+    best_time = forecast_list[0]['time']
+    for entry in forecast_list:
+        step_prices = [p['price'] for v in ['bike', 'auto', 'car'] for p in entry[v].values() if p]
+        if step_prices and min(step_prices) == global_cheapest:
+            best_time = entry['time']
+            break
 
-        entry = {
-            "time": (now + timedelta(minutes=i*15)).strftime("%H:%M"),
-            "bike": future_data['bike'],
-            "auto": future_data['auto'],
-            "car": future_data['car']
-        }
-
-        # min price
-        valid_prices = []
-        for v in ['bike', 'auto', 'car']:
-            if entry[v]:
-                for p in entry[v].values():
-                    if p:
-                        valid_prices.append(p['price'])
-
-        if valid_prices:
-            min_val = min(valid_prices)
-            if min_val < min_price:
-                min_price = min_val
-                best_time = entry["time"]
-
-        forecast.append(entry)
-
-    # INSIGHT
-    valid_current = []
-    for v in ['bike', 'auto', 'car']:
-        if current_data[v]:
-            for p in current_data[v].values():
-                if p:
-                    valid_current.append(p['price'])
-
-    current_min = min(valid_current) if valid_current else 0
-    savings = max(0, current_min - min_price)
-
-    if savings <= 5:
-        message = "Prices are stable right now"
-    elif savings <= 20:
-        message = f"You could save ₹{int(savings)} by waiting a bit"
-    else:
-        message = f"You could save ₹{int(savings)} by waiting"
+    message = "Prices are stable right now"
+    if savings > 20:
+        message = f"Smart Move: Wait for {best_time} to save ₹{savings}"
+    elif savings > 5:
+        message = "Slight price drop expected soon"
 
     return {
         "current": current_data,
-        "forecast": forecast,
+        "forecast": forecast_list,
         "insight": {
             "best_time": best_time,
             "savings": int(savings),
             "message": message
         }
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
