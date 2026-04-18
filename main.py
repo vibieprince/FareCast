@@ -12,14 +12,16 @@ app = FastAPI()
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://10.57.20.40:5173",
+    "https://farecast.vercel.app",
+    "https://farecast-web-app.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ==============================
