@@ -10,8 +10,14 @@ from datetime import datetime, timedelta
 app = FastAPI()
 
 ALLOWED_ORIGINS = [
+    # Local development — all common Vite ports
     "http://localhost:5173",
-    "http://10.57.20.40:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
+    # Production — Vercel deployments
     "https://farecast.vercel.app",
     "https://farecast-web-app.vercel.app",
 ]
