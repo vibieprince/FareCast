@@ -85,13 +85,12 @@ Ride prices fluctuate heavily due to:
 ![Prediction output](screenshots/Screenshot%20(351).png)
 
 ### 🔹 Forecast Visualization
-
-*Add screenshot here*
+![Forecast visualization](screenshots/Group%2012.png)
 
 ### 🔹 Frontend UI
 
 *Add your FareCast UI screenshot here*
-
+![Frontend UI](screenshots/Group%209.png)
 ---
 
 ## 🧠 ML Approach
