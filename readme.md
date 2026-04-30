@@ -1,216 +1,166 @@
+# 🚗 FareCast – Smart Ride Price & Wait Time Prediction Engine
 
-# 🚦 Surge Intelligence & Fare Optimization System
-## Phase 1 – Problem Framing & Strategic Decisions
-
----
-
-## 1️⃣ Core Objective
-
-Build an end-to-end predictive system that:
-
-- Estimates **Base Fare**
-- Predicts **Surge Multiplier**
-- Computes **Final Fare = Base × Surge**
-- Simulates pricing for next **2 hours**
-- Recommends optimal booking time
-- Logs user-reported actual fare for future model refinement
-
-This is a **decision-support pricing intelligence system**, not a ride-hailing app.
+🚀 **FareCast** is an AI-powered system that predicts **ride fares and waiting times** across multiple platforms (Uber, Ola, Rapido) and vehicle types (Bike, Auto, Car), along with a **future price forecast** to help users book at the cheapest time.
 
 ---
 
-## 2️⃣ Problem Framing
+## 🎯 Problem Solved
 
-Develop a predictive pricing intelligence system that models dynamic surge behavior using temporal, geospatial, weather, and demand-supply engineered features. The system forecasts short-term fare trends and provides optimal booking-time recommendations. It includes deployment and monitoring with feedback logging for future retraining.
+Ride prices fluctuate heavily due to:
 
----
+* Traffic
+* Time of day
+* Demand (rush hours)
+* Weather conditions
 
-## 3️⃣ Modeling Strategy
+❌ Users don’t know *when* to book
+❌ No platform shows **future price trends**
 
-### 🔹 Model 1 – Base Fare Estimator (Regression)
-
-Base Fare = f(distance, trip duration, location, time)
-
-Metrics:
-- MAE
-- RMSE
-- R²
+👉 **FareCast solves this by predicting both current and future fares + wait times**
 
 ---
 
-### 🔹 Model 2 – Surge Multiplier Predictor (Regression)
+## 🧠 What I Built
 
-Surge = f(demand index, supply index, weather, peak hour, zone factors)
+* 🔮 ML models to predict:
 
-Metrics:
-- MAE
-- RMSE
-- High-surge error %
-- Stability during peak periods
-
----
-
-### 🔹 Final Fare
-
-Final Fare = Predicted Base × Predicted Surge
-
-System-level evaluation:
-- Final fare % error
-- Stability across forecast window
+  * Ride fare (per platform + vehicle)
+  * Waiting time (per platform + vehicle)
+* 📈 2-hour **price forecasting engine**
+* ⚡ FastAPI backend deployed on cloud
+* 🌐 Frontend (Streamlit / Web UI)
+* 🔗 Real-world API integration ready (Maps, Weather)
 
 ---
 
-## 4️⃣ Data Strategy
+## 🧩 Key Features
 
-- NYC Taxi dataset:
-  - Pickup time
-  - Dropoff time
-  - Distance
-  - Location zones
-  - Base fare structure
-
-- Engineered Features:
-  - Hourly demand density
-  - Zone-based demand clusters
-  - Supply proxy index
-  - Time cyclic features
-  - Peak hour indicators
-
-- Weather API integration during deployment.
+* ✅ Platform-wise predictions (Uber / Ola / Rapido)
+* ✅ Vehicle-wise predictions (Bike / Auto / Car)
+* ✅ Wait time estimation
+* ✅ Future forecast (every 15 minutes)
+* ✅ Best time recommendation
+* ✅ Savings calculation
 
 ---
 
-## 5️⃣ Surge Simulation Philosophy
+## 📊 Sample Output
 
-Surge will simulate real-world pricing behavior using:
+### Current Predictions
 
-- Non-linear demand-supply imbalance
-- Peak hour weighting
-- Rain amplification factor
-- Weekend factor
-- Airport/business zone impact
-- Controlled noise injection
-
----
-
-## 6️⃣ Forecasting Approach
-
-For next 2 hours:
-
-- Shift time feature
-- Recompute demand index
-- Recompute surge predictors
-- Re-run regression model
-- Compare predicted fare trends
-
-Feature-driven dynamic simulation (not ARIMA-based).
+| Vehicle | Platform | Price (₹) | Wait (min) |
+| ------- | -------- | --------- | ---------- |
+| Bike    | Ola      | 79        | 1          |
+| Bike    | Rapido   | 74        | 2          |
+| Bike    | Uber     | 74        | 2          |
+| Auto    | Ola      | 149       | 2          |
+| Car     | Uber     | 190       | 2          |
 
 ---
 
-## 7️⃣ Multi-Factor Contributors
+### Forecast Trend (Next 2 Hours)
 
-- Peak hour category
-- Late night factor
-- Weekend indicator
-- Rain intensity
-- Heavy rain boost
-- Airport zone flag
-- High-demand zone indicator
-- Event simulation toggle
-- Demand-supply imbalance
-- Randomized noise
+| Time  | Bike (₹) | Auto (₹) | Car (₹) |
+| ----- | -------- | -------- | ------- |
+| 18:30 | 74       | 149      | 181     |
+| 19:00 | 76       | 144      | 183     |
+| 20:00 | 71       | 140      | 197     |
 
----
+📉 Insight:
 
-## 8️⃣ Feedback Loop
-
-User may input actual fare paid.
-
-System logs:
-- Input features
-- Predicted fare
-- Actual fare
-- Error %
-
-Used for:
-- Periodic evaluation
-- Drift detection
-- Offline retraining
+> Best time to book: **20:00**
+> Potential savings: **₹3**
 
 ---
 
-## 9️⃣ Scope Boundaries
+## 📸 Screenshots (Proof of Work)
 
-- NYC only
-- 2-hour forecast window
-- No traffic API (simulated proxy)
-- No real platform scraping
-- No real-time retraining
+### 🔹 API Working (Swagger UI)
 
----
+![API Working](screenshots/Screenshot%20(349).png)
 
-## 🔟 Technical Stack
+### 🔹 Prediction Output (JSON Response)
 
-Data:
-- NYC Taxi dataset
-- Weather API
+![Prediction output](screenshots/Screenshot%20(350).png)
+![Prediction output](screenshots/Screenshot%20(351).png)
 
-ML:
-- Linear Regression
-- Random Forest
-- XGBoost / LightGBM
-- SHAP
-- MLflow
+### 🔹 Forecast Visualization
 
-Deployment:
-- FastAPI
-- Streamlit
-- Docker
-- Render
+*Add screenshot here*
 
-Monitoring:
-- Prediction logging
-- Drift analysis
-- Periodic retraining plan
+### 🔹 Frontend UI
+
+*Add your FareCast UI screenshot here*
 
 ---
 
-## 🎯 Project Classification
+## 🧠 ML Approach
 
-This is:
+* **Random Forest Classifier**
 
-- Applied Data Science
-- Economic modeling
-- Demand-supply simulation
-- Regression modeling
-- Short-term forecasting
-- Decision optimization
-- Deployment-aware ML system
+  * Predicts ride availability
 
----
+* **Random Forest Regressor**
 
-## ⚠️ Risks
+  * Predicts:
 
-- Poor surge simulation logic
-- Weak feature engineering
-- Scope explosion
-- UI distraction before modeling
-
-Mitigation:
-- Strict phase discipline
-- ML-first approach
-- Controlled scope
+    * Price per KM
+    * Waiting time
 
 ---
 
-## 📌 Phase 1 Status
+## 📊 Features Used
 
-✔ Objective defined  
-✔ Modeling structure defined  
-✔ Dataset chosen  
-✔ Forecast window locked  
-✔ Simulation philosophy defined  
-✔ Monitoring strategy planned  
-✔ Scope boundaries set  
+* Time (Decimal Hour)
+* Day / Weekend
+* Rush Hour flag
+* Distance
+* Traffic Level
+* Surge Value
+* Temperature & Humidity
+* Pickup / Drop Zones
 
-Phase 1 Complete.
+---
+
+## ⚙️ Tech Stack
+
+* **Backend**: FastAPI
+* **ML**: Scikit-learn
+* **Data Processing**: Pandas, NumPy
+* **Deployment**: Render
+* **Frontend**: Streamlit / Web UI
+* **APIs Ready**: Google Maps, Weather APIs
+
+---
+
+## 🚀 Live API
+[https://farecast-ml-api.onrender.com/farecast]
+
+---
+
+## 📈 Why This Project Stands Out
+
+* Not just prediction → **decision-making system**
+* Combines:
+
+  * Time-series thinking
+  * ML regression
+  * Real-world ride logic
+* Production-ready architecture
+
+---
+
+## 🔮 Future Improvements
+
+* Real-time traffic integration
+* Weather API integration
+* User-specific personalization
+* Deep learning models (LSTM for trends)
+
+---
+
+## 👨‍💻 Author
+
+**Prince Singh**
+B.Tech CSE (Data Science)
+Aspiring Data Scientist 🚀

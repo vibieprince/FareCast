@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FareCast | AI Ride Forecasting</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #f8fafc, #eef2ff);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(59,130,246,0.1), transparent);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body class="text-slate-900">
+
+<!-- HERO -->
+<section class="pt-32 pb-20 text-center border-b">
+    <div class="max-w-6xl mx-auto px-6">
+        <h1 class="text-6xl font-extrabold mb-6">
+            FareCast
+        </h1>
+        <p class="text-xl text-slate-600 max-w-2xl mx-auto mb-10">
+            Predict ride prices and wait times across Uber, Ola, and Rapido — and see how they change over the next 2 hours.
+        </p>
+
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="https://farecast.vercel.app" target="_blank"
+               class="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800">
+                🚀 Try Live App
+            </a>
+
+            <a href="https://farecast-ml-api.onrender.com/docs" target="_blank"
+               class="border px-6 py-3 rounded-xl font-semibold">
+                API Docs
+            </a>
+
+            <a href="https://github.com/vibieprince/FareCast" target="_blank"
+               class="bg-white border px-6 py-3 rounded-xl font-semibold flex gap-2 items-center">
+                <i data-lucide="github"></i> GitHub
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- PROBLEM / SOLUTION -->
+<section class="py-20 bg-white">
+    <div class="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto px-6">
+
+        <div class="p-8 bg-red-50 rounded-3xl reveal">
+            <h2 class="text-2xl font-bold mb-4">The Problem</h2>
+            <p class="text-slate-600">
+                Ride prices fluctuate constantly. Users don’t know when to book or which platform is cheapest.
+            </p>
+        </div>
+
+        <div class="p-8 bg-green-50 rounded-3xl reveal">
+            <h2 class="text-2xl font-bold mb-4">The Solution</h2>
+            <p class="text-slate-600">
+                FareCast predicts prices and wait times and forecasts the next 2 hours so users can save money.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section class="py-20 bg-slate-900 text-white">
+    <div class="max-w-6xl mx-auto px-6 text-center mb-12">
+        <h2 class="text-4xl font-bold">Technical Proof</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto px-6">
+        <img src="screenshots/Screenshot (349).png" class="rounded-xl">
+        <img src="screenshots/Screenshot (350).png" class="rounded-xl">
+        <img src="screenshots/Screenshot (351).png" class="rounded-xl">
+        <img src="screenshots/Group 12.png" class="rounded-xl">
+    </div>
+</section>
+
+<!-- FORECAST GRAPH -->
+<section class="py-24">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+
+        <h2 class="text-4xl font-bold mb-6">2-Hour Price Forecast</h2>
+        <p class="text-slate-600 mb-10">
+            Platform-wise comparison over time to identify the cheapest booking window.
+        </p>
+
+        <div class="bg-white p-8 rounded-3xl shadow-xl">
+            <canvas id="chart"></canvas>
+        </div>
+
+    </div>
+</section>
+
+<!-- ML ENGINE -->
+<section class="py-24 bg-white">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10">
+
+        <div>
+            <h2 class="text-3xl font-bold mb-6">ML Engine</h2>
+            <p class="text-slate-600">
+                FareCast uses Random Forest models trained on time, traffic, weather, and location data to predict fares and waiting times.
+            </p>
+        </div>
+
+        <div class="bg-slate-900 text-white p-6 rounded-3xl">
+            <h3 class="font-bold mb-4">Features Used</h3>
+            <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-slate-800 px-3 py-1 rounded">Distance</span>
+                <span class="bg-slate-800 px-3 py-1 rounded">Traffic</span>
+                <span class="bg-slate-800 px-3 py-1 rounded">Temperature</span>
+                <span class="bg-slate-800 px-3 py-1 rounded">Humidity</span>
+                <span class="bg-slate-800 px-3 py-1 rounded">Time</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20 bg-blue-600 text-white text-center">
+    <h2 class="text-4xl font-bold mb-6">Try FareCast Now</h2>
+    <a href="https://farecast.vercel.app" class="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold">
+        Launch App
+    </a>
+</section>
+
+<!-- FOOTER -->
+<footer class="py-10 text-center text-slate-500">
+    <p>© 2026 Prince Singh</p>
+</footer>
+
+<script>
+    lucide.createIcons();
+
+    // Reveal animation
+    const elements = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting) entry.target.classList.add('active');
+        });
+    });
+
+    elements.forEach(el => observer.observe(el));
+
+    // Chart
+    new Chart(document.getElementById("chart"), {
+        type: 'line',
+        data: {
+            labels: ["18:30","18:45","19:00","19:15","19:30","19:45","20:00"],
+            datasets: [
+                {
+                    label: "Uber",
+                    data: [74,73,73,74,74,73,71],
+                    borderColor: "#3b82f6"
+                },
+                {
+                    label: "Ola",
+                    data: [79,79,80,79,79,78,78],
+                    borderColor: "#22c55e"
+                },
+                {
+                    label: "Rapido",
+                    data: [74,74,76,75,75,74,74],
+                    borderColor: "#f59e0b"
+                }
+            ]
+        }
+    });
+</script>
+
+</body>
+</html>
