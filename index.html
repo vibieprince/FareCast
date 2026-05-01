@@ -3,211 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FareCast | AI Ride Forecasting</title>
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind -->
+    <title>FareCast | Predictive Mobility Engine</title>
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Icons -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: '#3b82f6', // Electric Blue
+                        lightBg: '#f8fafc' // Slate 50
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons & Chart.js -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(180deg, #f8fafc, #eef2ff);
+            background-color: #f8fafc;
+            color: #0f172a;
         }
-
-        body::before {
-            content: "";
+        /* Dynamic Glossy Background (Light Mode) */
+        .dynamic-bg {
             position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at top, rgba(59,130,246,0.1), transparent);
-            z-index: 0;
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.1) 0%, rgba(248, 250, 252, 1) 60%);
+            transition: background 0.3s ease-out;
         }
-
-        .glass {
-            background: rgba(255,255,255,0.7);
-            backdrop-filter: blur(10px);
+        /* Premium Glassmorphism (Light Mode) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
         }
-
         .reveal {
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.6s ease;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .reveal.active {
             opacity: 1;
             transform: translateY(0);
         }
     </style>
 </head>
+<body class="font-sans antialiased selection:bg-brand selection:text-white">
 
-<body class="text-slate-900">
+    <!-- Dynamic Scroll Background -->
+    <div class="dynamic-bg" id="scrollBg"></div>
 
-<!-- HERO -->
-<section class="pt-32 pb-20 text-center border-b">
-    <div class="max-w-6xl mx-auto px-6">
-        <h1 class="text-6xl font-extrabold mb-6">
-            FareCast
-        </h1>
-        <p class="text-xl text-slate-600 max-w-2xl mx-auto mb-10">
-            Predict ride prices and wait times across Uber, Ola, and Rapido — and see how they change over the next 2 hours.
-        </p>
-
-        <div class="flex flex-wrap justify-center gap-4">
-            <a href="https://farecast.vercel.app" target="_blank"
-               class="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800">
-                🚀 Try Live App
-            </a>
-
-            <a href="https://farecast-ml-api.onrender.com/docs" target="_blank"
-               class="border px-6 py-3 rounded-xl font-semibold">
-                API Docs
-            </a>
-
-            <a href="https://github.com/vibieprince/FareCast" target="_blank"
-               class="bg-white border px-6 py-3 rounded-xl font-semibold flex gap-2 items-center">
-                <i data-lucide="github"></i> GitHub
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- PROBLEM / SOLUTION -->
-<section class="py-20 bg-white">
-    <div class="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto px-6">
-
-        <div class="p-8 bg-red-50 rounded-3xl reveal">
-            <h2 class="text-2xl font-bold mb-4">The Problem</h2>
-            <p class="text-slate-600">
-                Ride prices fluctuate constantly. Users don’t know when to book or which platform is cheapest.
+    <!-- 1. HERO SECTION -->
+    <header class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 border-b border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
+            <span class="inline-block py-1.5 px-5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-widest mb-8 border border-blue-200 glass-panel">
+                Machine Learning Case Study
+            </span>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter mb-8 leading-tight text-slate-900">
+                Predict Your Ride prices <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Before You Book.
+                </span>
+            </h1>
+            <p class="text-xl text-slate-600 max-w-2xl mx-auto mb-10 font-light leading-relaxed">
+                An AI-powered intelligence layer forecasting fares and wait times across Uber, Ola, and Rapido using Real-Time Random Forest Regression.
             </p>
-        </div>
-
-        <div class="p-8 bg-green-50 rounded-3xl reveal">
-            <h2 class="text-2xl font-bold mb-4">The Solution</h2>
-            <p class="text-slate-600">
-                FareCast predicts prices and wait times and forecasts the next 2 hours so users can save money.
-            </p>
-        </div>
-
-    </div>
-</section>
-
-<!-- SCREENSHOTS -->
-<section class="py-20 bg-slate-900 text-white">
-    <div class="max-w-6xl mx-auto px-6 text-center mb-12">
-        <h2 class="text-4xl font-bold">Technical Proof</h2>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto px-6">
-        <img src="screenshots/Screenshot (349).png" class="rounded-xl">
-        <img src="screenshots/Screenshot (350).png" class="rounded-xl">
-        <img src="screenshots/Screenshot (351).png" class="rounded-xl">
-        <img src="screenshots/Group 12.png" class="rounded-xl">
-    </div>
-</section>
-
-<!-- FORECAST GRAPH -->
-<section class="py-24">
-    <div class="max-w-5xl mx-auto px-6 text-center">
-
-        <h2 class="text-4xl font-bold mb-6">2-Hour Price Forecast</h2>
-        <p class="text-slate-600 mb-10">
-            Platform-wise comparison over time to identify the cheapest booking window.
-        </p>
-
-        <div class="bg-white p-8 rounded-3xl shadow-xl">
-            <canvas id="chart"></canvas>
-        </div>
-
-    </div>
-</section>
-
-<!-- ML ENGINE -->
-<section class="py-24 bg-white">
-    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10">
-
-        <div>
-            <h2 class="text-3xl font-bold mb-6">ML Engine</h2>
-            <p class="text-slate-600">
-                FareCast uses Random Forest models trained on time, traffic, weather, and location data to predict fares and waiting times.
-            </p>
-        </div>
-
-        <div class="bg-slate-900 text-white p-6 rounded-3xl">
-            <h3 class="font-bold mb-4">Features Used</h3>
-            <div class="flex flex-wrap gap-2 text-sm">
-                <span class="bg-slate-800 px-3 py-1 rounded">Distance</span>
-                <span class="bg-slate-800 px-3 py-1 rounded">Traffic</span>
-                <span class="bg-slate-800 px-3 py-1 rounded">Temperature</span>
-                <span class="bg-slate-800 px-3 py-1 rounded">Humidity</span>
-                <span class="bg-slate-800 px-3 py-1 rounded">Time</span>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-5">
+                <a href="https://github.com/vibieprince/FareCast" target="_blank" class="flex items-center justify-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
+                    <i data-lucide="github" class="w-5 h-5"></i> ML Pipeline Code
+                </a>
+                <a href="https://farecast.vercel.app" target="_blank" class="flex items-center justify-center gap-2 glass-panel text-slate-800 px-8 py-4 rounded-xl font-semibold hover:bg-white transition-all">
+                    <i data-lucide="rocket" class="w-5 h-5 text-blue-600"></i> Launch Live App
+                </a>
+                <a href="https://farecast-ml-api.onrender.com/docs" target="_blank" class="flex items-center justify-center gap-2 glass-panel text-slate-800 px-8 py-4 rounded-xl font-semibold hover:bg-white transition-all">
+                    <i data-lucide="terminal" class="w-5 h-5 text-slate-500"></i> API Docs
+                </a>
             </div>
         </div>
+    </header>
 
-    </div>
-</section>
+    <!-- 2. FORECAST ANALYTICS (The 2-Hour Graph) -->
+    <section class="py-24 border-b border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-3xl font-bold mb-4 tracking-tight text-slate-900">Beyond Real-Time Pricing</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto">We don't just show current prices. Our model simulates market dynamics to project costs 120 minutes into the future, finding the optimal booking window.</p>
+            </div>
+            
+            <div class="glass-panel p-6 md:p-10 rounded-[2rem] reveal">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-800">Predictive Price Matrix</h3>
+                        <p class="text-xs text-slate-500 mt-1">2-Hour Forward Projection (INR)</p>
+                    </div>
+                    <div class="flex gap-4 text-xs font-bold bg-white/60 py-2 px-4 rounded-full border border-slate-200 shadow-sm">
+                        <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]"></span> Uber</span>
+                        <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.4)]"></span> Ola</span>
+                        <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]"></span> Rapido</span>
+                    </div>
+                </div>
+                <div class="relative h-[300px] w-full">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<!-- CTA -->
-<section class="py-20 bg-blue-600 text-white text-center">
-    <h2 class="text-4xl font-bold mb-6">Try FareCast Now</h2>
-    <a href="https://farecast.vercel.app" class="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold">
-        Launch App
-    </a>
-</section>
+    <!-- 3. TECHNICAL ARCHITECTURE (Screenshots) -->
+    <section class="py-24 border-b border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <h2 class="text-4xl font-bold mb-4 tracking-tight text-slate-900">System Architecture</h2>
+                <p class="text-slate-600">Production-ready API responses and mobile-first client implementation.</p>
+            </div>
 
-<!-- FOOTER -->
-<footer class="py-10 text-center text-slate-500">
-    <p>© 2026 Prince Singh</p>
-</footer>
+            <div class="grid lg:grid-cols-12 gap-10">
+                <!-- App View -->
+                <div class="lg:col-span-4 flex justify-center reveal">
+                    <div class="p-4 glass-panel rounded-[3rem]">
+                        <img src="screenshots/Group 12.png" alt="Mobile UI" class="rounded-[2.5rem] w-full max-w-[320px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
+                    </div>
+                </div>
 
-<script>
-    lucide.createIcons();
+                <!-- API Deep Dive -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="reveal glass-panel p-8 rounded-3xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xs font-bold text-blue-600 uppercase tracking-widest">FastAPI Swagger Specification</h3>
+                            <a href="https://github.com/vibieprince/FareCast" target="_blank" class="text-slate-400 hover:text-slate-900 transition-colors"><i data-lucide="github" class="w-5 h-5"></i></a>
+                        </div>
+                        <img src="screenshots/Screenshot (349).png" alt="Swagger" class="rounded-xl border border-slate-200 opacity-90 hover:opacity-100 transition-opacity w-full shadow-sm">
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 reveal">
+                        <div class="glass-panel p-6 rounded-3xl">
+                            <h3 class="text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Platform JSON Output</h3>
+                            <img src="screenshots/Screenshot (350).png" alt="Response" class="rounded-xl border border-slate-200 w-full shadow-sm">
+                        </div>
+                        <div class="glass-panel p-6 rounded-3xl">
+                            <h3 class="text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Forecast Analytics</h3>
+                            <img src="screenshots/Screenshot (351).png" alt="Analysis" class="rounded-xl border border-slate-200 w-full shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    // Reveal animation
-    const elements = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if(entry.isIntersecting) entry.target.classList.add('active');
-        });
-    });
+    <!-- 4. ML DETAILS -->
+    <section class="py-24">
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal">
+                <h2 class="text-4xl font-bold mb-6 tracking-tight text-slate-900">The ML Engine</h2>
+                <p class="text-slate-600 mb-8 text-lg font-light leading-relaxed">
+                    FareCast replaces static rule-based pricing with a **Random Forest Regressor** deployed via FastAPI. We process highly granular environmental variables to predict non-linear surge patterns before they happen.
+                </p>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="p-6 rounded-2xl glass-panel">
+                        <i data-lucide="brain-circuit" class="text-blue-600 mb-4 w-6 h-6"></i>
+                        <h4 class="font-bold text-slate-900 mb-1">Regression</h4>
+                        <p class="text-xs text-slate-500">Predicts continuous price and wait time values dynamically.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl glass-panel">
+                        <i data-lucide="database" class="text-indigo-600 mb-4 w-6 h-6"></i>
+                        <h4 class="font-bold text-slate-900 mb-1">FastAPI Backend</h4>
+                        <p class="text-xs text-slate-500">High-performance asynchronous request handling.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="reveal glass-panel p-10 rounded-[3rem] relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-200/50 blur-[80px] rounded-full"></div>
+                <h3 class="text-xl font-bold mb-6 text-slate-900 relative z-10">Engineered Features</h3>
+                <div class="flex flex-wrap gap-3 relative z-10">
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Distance (KM)</span>
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Traffic Density</span>
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Weather (Temp)</span>
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Zone Type</span>
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Humidity</span>
+                    <span class="px-4 py-2 rounded-full bg-white/80 border border-slate-200 text-xs text-slate-700 shadow-sm">Decimal Hour</span>
+                </div>
+                <div class="mt-10 pt-8 border-t border-slate-200/60 relative z-10">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">RF</div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-900">Random Forest Model</p>
+                            <p class="text-xs text-slate-500">Deployed on Render Cloud</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    elements.forEach(el => observer.observe(el));
+    <!-- FOOTER -->
+    <footer class="glass-panel py-12 border-t border-slate-200/60 mt-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3 text-xl font-black tracking-tighter text-slate-900">
+                <div class="w-4 h-4 bg-blue-600 rounded-sm"></div> FARECAST
+            </div>
+            <div class="flex gap-8">
+                <a href="https://github.com/vibieprince" class="text-slate-400 hover:text-slate-900 transition-colors"><i data-lucide="github"></i></a>
+                <a href="https://linkedin.com/in/vibieprince" class="text-slate-400 hover:text-slate-900 transition-colors"><i data-lucide="linkedin"></i></a>
+            </div>
+            <div class="text-slate-500 text-xs font-medium tracking-widest uppercase">
+                Prince Singh • GLBITM CSE(Data Science)
+            </div>
+        </div>
+    </footer>
 
-    // Chart
-    new Chart(document.getElementById("chart"), {
-        type: 'line',
-        data: {
-            labels: ["18:30","18:45","19:00","19:15","19:30","19:45","20:00"],
-            datasets: [
-                {
-                    label: "Uber",
-                    data: [74,73,73,74,74,73,71],
-                    borderColor: "#3b82f6"
-                },
-                {
-                    label: "Ola",
-                    data: [79,79,80,79,79,78,78],
-                    borderColor: "#22c55e"
-                },
-                {
-                    label: "Rapido",
-                    data: [74,74,76,75,75,74,74],
-                    borderColor: "#f59e0b"
+    <script>
+        // 1. Initialize Icons
+        lucide.createIcons();
+
+        // 2. Scroll Reveal Animations
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
                 }
-            ]
-        }
-    });
-</script>
+            });
+        }, { threshold: 0.1 });
+        reveals.forEach(reveal => observer.observe(reveal));
 
+        // 3. Dynamic Glossy Background Logic (Adapted for Light Mode)
+        const bg = document.getElementById('scrollBg');
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = scrolled / maxScroll;
+            
+            // Shift the center of the radial gradient and change opacity based on scroll
+            const yPos = 0 + (scrollPercent * 100);
+            bg.style.background = `radial-gradient(circle at 50% ${yPos}%, rgba(59, 130, 246, 0.1) 0%, rgba(248, 250, 252, 1) 70%)`;
+        });
+
+        // 4. Chart.js 2-Hour Forecast Implementation
+        const ctx = document.getElementById('predictionChart').getContext('2d');
+        
+        // Custom styling for Chart.js to match the premium light theme
+        Chart.defaults.color = '#64748b'; // Slate 500
+        Chart.defaults.font.family = 'Inter';
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Now', '+15m', '+30m', '+45m', '+60m', '+75m', '+90m', '+105m', '+120m'],
+                datasets: [
+                    {
+                        label: 'Uber',
+                        data: [280, 265, 290, 240, 230, 235, 215, 205, 210],
+                        borderColor: '#3b82f6', // Blue
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4, 
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    },
+                    {
+                        label: 'Ola',
+                        data: [310, 295, 280, 275, 260, 250, 245, 230, 220],
+                        borderColor: '#34d399', // Emerald
+                        backgroundColor: 'rgba(52, 211, 153, 0.05)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#34d399',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    },
+                    {
+                        label: 'Rapido',
+                        data: [240, 235, 250, 210, 200, 195, 180, 175, 170],
+                        borderColor: '#fbbf24', // Amber
+                        backgroundColor: 'rgba(251, 191, 36, 0.05)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#fbbf24',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false }, 
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#0f172a',
+                        bodyColor: '#475569',
+                        borderColor: 'rgba(0,0,0,0.05)',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: { font: { size: 11, weight: '600' } }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            callback: function(value) { return '₹' + value; },
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
